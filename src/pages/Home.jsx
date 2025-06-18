@@ -22,7 +22,7 @@ export default function Home() {
     <div className="max-w-6xl mx-auto p-6 relative">
   <div className="z-20 pointer-events-none">
   {/* Mobile view */}
-  <div className="sm:hidden fixed bottom-28 left-1/2 transform -translate-x-1/2 w-60 h-56 overflow-hidden">
+  <div className="sm:hidden fixed bottom-24 left-1/2 transform -translate-x-1/2 w-60 h-56 overflow-hidden">
     <MyAvatar />
   </div>
 

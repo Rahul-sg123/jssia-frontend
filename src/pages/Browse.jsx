@@ -109,7 +109,7 @@ const vote = async (paperId, fileIndex, type) => {
         <div className="flex gap-3">
           <button
             className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition"
-            onClick={() => setPreviewUrl(`https://jssia-backend.onrender.com${f.url}`)}
+            onClick={() => setPreviewUrl(`const backendURL = process.env.REACT_APP_BACKEND_URL;${f.url}`)}
           >
             📄 View
           </button>
