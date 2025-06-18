@@ -124,33 +124,34 @@ export default function Browse() {
 
                     <div className="flex gap-2 text-sm mt-2 sm:mt-0">
   <button
-    onClick={() => vote(paper._id, idx, 'upvote')}
-    disabled={localStorage.getItem(`voted-${paper._id}-${idx}-upvote`)}
-    className={`flex items-center gap-1 px-3 py-1 rounded transition ${
-      localStorage.getItem(`voted-${paper._id}-${idx}-upvote`)
-        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-        : 'bg-green-100 text-green-700 hover:bg-green-200'
-    }`}
+    onClick={() => {
+      const voteKey = `${paper._id}-${idx}-upvoted`;
+      if (localStorage.getItem(voteKey)) {
+        alert("You've already liked this file.");
+        return;
+      }
+      vote(paper._id, idx, 'upvote');
+      localStorage.setItem(voteKey, 'true');
+    }}
+    className="flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 transition"
   >
     👍 {f.upvotes}
   </button>
 
   <button
     onClick={() => {
-      const voteKey = `voted-${paper._id}-${idx}-downvote`;
+      const voteKey = `${paper._id}-${idx}-downvoted`;
       if (localStorage.getItem(voteKey)) {
-        alert('You have already disliked this file.');
+        alert("You've already disliked this file.");
         return;
       }
       const confirm = window.confirm("Are you sure you want to dislike this file?");
-      if (confirm) vote(paper._id, idx, 'downvote');
+      if (confirm) {
+        vote(paper._id, idx, 'downvote');
+        localStorage.setItem(voteKey, 'true');
+      }
     }}
-    disabled={localStorage.getItem(`voted-${paper._id}-${idx}-downvote`)}
-    className={`flex items-center gap-1 px-3 py-1 rounded transition ${
-      localStorage.getItem(`voted-${paper._id}-${idx}-downvote`)
-        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-        : 'bg-red-100 text-red-700 hover:bg-red-200'
-    }`}
+    className="flex items-center gap-1 px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition"
   >
     👎 {f.downvotes}
   </button>
