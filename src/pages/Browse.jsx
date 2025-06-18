@@ -8,12 +8,14 @@ export default function Browse() {
   const [selectedSemester, setSelectedSemester] = useState('');
   const [previewUrl, setPreviewUrl] = useState(null);
 
+  // Load subjects
   useEffect(() => {
     axios.get('https://jssia-backend.onrender.com/api/subjects')
       .then(res => setSubjects(res.data.subjects))
       .catch(err => console.error('Subjects load error:', err));
   }, []);
 
+  // Load papers based on selected filters
   useEffect(() => {
     if (!selectedSubject || !selectedSemester) {
       setPapers([]);
@@ -30,20 +32,15 @@ export default function Browse() {
       .catch(err => console.error('Papers load error:', err));
   }, [selectedSubject, selectedSemester]);
 
-  // 🛑 Allow one vote per file per device
+  // Handle voting
+  // Browse.jsx
   const vote = async (paperId, fileIndex, type) => {
-    const voteKey = `voted-${paperId}-${fileIndex}-${type}`;
-    if (localStorage.getItem(voteKey)) {
-      alert(`You've already ${type === 'upvote' ? 'liked' : 'disliked'} this file.`);
-      return;
-    }
-
     try {
       await axios.put(
         `https://jssia-backend.onrender.com/papers/${paperId}/files/${fileIndex}/${type}`
       );
-      localStorage.setItem(voteKey, 'true');
 
+      // refresh list
       const res = await axios.get('https://jssia-backend.onrender.com/papers', {
         params: {
           subject: selectedSubject.toLowerCase(),
@@ -55,6 +52,9 @@ export default function Browse() {
       console.error('Vote error:', err);
     }
   };
+
+
+
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
@@ -86,6 +86,10 @@ export default function Browse() {
         </select>
       </div>
 
+
+
+
+      {/* Papers */}
       {papers.length === 0 ? (
         <p className="text-gray-500">No papers found.</p>
       ) : (
@@ -99,71 +103,54 @@ export default function Browse() {
             )}
 
             {Array.isArray(paper.files) && paper.files.length > 0 && (
-              paper.files.map((f, idx) => {
-                const upVoteKey = `voted-${paper._id}-${idx}-upvote`;
-                const downVoteKey = `voted-${paper._id}-${idx}-downvote`;
-                const hasUpvoted = localStorage.getItem(upVoteKey);
-                const hasDownvoted = localStorage.getItem(downVoteKey);
+              paper.files.map((f, idx) => (
+                <div key={idx} className="mb-4 border rounded-lg overflow-hidden shadow-sm bg-white dark:bg-gray-800">
+                  <div className="flex flex-col sm:flex-row justify-between items-center p-4 gap-4">
+                    <div className="flex gap-3">
+                      <button
+                        className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition"
+                        onClick={() => setPreviewUrl(`const backendURL = process.env.REACT_APP_BACKEND_URL;${f.url}`)}
+                      >
+                        📄 View
+                      </button>
+                      <a
+                        href={`https://jssia-backend.onrender.com${f.url}`}
+                        download
+                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+                      >
+                        ⬇ Download
+                      </a>
+                    </div>
 
-                return (
-                  <div key={idx} className="mb-4 border rounded-lg overflow-hidden shadow-sm bg-white dark:bg-gray-800">
-                    <div className="flex flex-col sm:flex-row justify-between items-center p-4 gap-4">
-                      <div className="flex gap-3">
-                        <button
-                          className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition"
-                          onClick={() => setPreviewUrl(`https://jssia-backend.onrender.com${f.url}`)}
-                        >
-                          📄 View
-                        </button>
-                        <a
-                          href={`https://jssia-backend.onrender.com${f.url}`}
-                          download
-                          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
-                        >
-                          ⬇ Download
-                        </a>
-                      </div>
+                    <div className="flex gap-2 text-sm mt-2 sm:mt-0">
+                      <button
+                        onClick={() => vote(paper._id, idx, 'upvote')}
+                        className="flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 transition"
+                      >
+                        👍 {f.upvotes}
+                      </button>
+                      <button
+                        onClick={() => {
+                          const confirm = window.confirm("Are you sure you want to dislike this file?");
+                          if (confirm) vote(paper._id, idx, 'downvote');
+                        }}
+                        className="flex items-center gap-1 px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition"
+                      >
+                        👎 {f.downvotes}
+                      </button>
 
-                      <div className="flex gap-2 text-sm mt-2 sm:mt-0">
-                        <button
-                          onClick={() => vote(paper._id, idx, 'upvote')}
-                          className={`flex items-center gap-1 px-3 py-1 rounded transition ${
-                            hasUpvoted
-                              ? 'bg-green-300 text-green-800 cursor-not-allowed'
-                              : 'bg-green-100 text-green-700 hover:bg-green-200'
-                          }`}
-                          disabled={hasUpvoted}
-                        >
-                          👍 {f.upvotes}
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (hasDownvoted) {
-                              alert("You've already disliked this file.");
-                              return;
-                            }
-                            const confirm = window.confirm("Are you sure you want to dislike this file?");
-                            if (confirm) vote(paper._id, idx, 'downvote');
-                          }}
-                          className={`flex items-center gap-1 px-3 py-1 rounded transition ${
-                            hasDownvoted
-                              ? 'bg-red-300 text-red-800 cursor-not-allowed'
-                              : 'bg-red-100 text-red-700 hover:bg-red-200'
-                          }`}
-                          disabled={hasDownvoted}
-                        >
-                          👎 {f.downvotes}
-                        </button>
-                      </div>
+
                     </div>
                   </div>
-                );
-              })
+                </div>
+              ))
             )}
+
           </div>
         ))
       )}
 
+      {/* Preview Modal */}
       {previewUrl && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
           <div className="relative w-full max-w-3xl h-[80vh] bg-white rounded shadow">
