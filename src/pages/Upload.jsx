@@ -10,6 +10,7 @@ export default function Upload() {
   const [description, setDescription] = useState('');
   const [files, setFiles] = useState([]);
   const [message, setMessage] = useState('');
+  const [uploadedFiles, setUploadedFiles] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const API_BASE = 'https://jssia-backend.onrender.com';
@@ -76,6 +77,7 @@ export default function Upload() {
 
       if (res.data.success) {
         setMessage('✅ Paper submitted successfully!');
+        setUploadedFiles(res.data.paper.files || []);
         setSubject('');
         setSemester('');
         setDescription('');
@@ -101,6 +103,22 @@ export default function Upload() {
       {message && (
         <div className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-4 py-2 rounded mb-4">
           {message}
+          {uploadedFiles.length > 0 && (
+            <ul className="mt-2 list-disc list-inside text-sm">
+              {uploadedFiles.map((f, idx) => (
+                <li key={idx}>
+                  <a
+                    href={f.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 dark:text-blue-400 underline"
+                  >
+                    {f.url}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
 

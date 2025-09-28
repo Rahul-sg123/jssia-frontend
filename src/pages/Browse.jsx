@@ -25,17 +25,16 @@ export default function Browse() {
       return;
     }
 
+    const subjectLower = selectedSubject.toLowerCase();
+
     axios
       .get(`${API_BASE}/papers`, {
-        params: { subject: selectedSubject, semester: selectedSemester },
+        params: { subject: subjectLower, semester: selectedSemester.toString() },
       })
       .then((res) => {
-        // Only keep files with Cloudinary URLs
         const sanitized = (res.data || []).map((p) => ({
           ...p,
-          files: Array.isArray(p.files)
-            ? p.files.filter((f) => f.url?.startsWith('http'))
-            : [],
+          files: Array.isArray(p.files) ? p.files.filter((f) => f.url?.startsWith('http')) : [],
         }));
         setPapers(sanitized);
       })
@@ -46,19 +45,15 @@ export default function Browse() {
   const vote = async (paperId, fileIndex, type) => {
     try {
       await axios.put(`${API_BASE}/papers/${paperId}/files/${fileIndex}/${type}`);
-
-      // Refresh papers after vote
+      // Refresh papers
+      const subjectLower = selectedSubject.toLowerCase();
       const res = await axios.get(`${API_BASE}/papers`, {
-        params: { subject: selectedSubject, semester: selectedSemester },
+        params: { subject: subjectLower, semester: selectedSemester.toString() },
       });
-
       const sanitized = (res.data || []).map((p) => ({
         ...p,
-        files: Array.isArray(p.files)
-          ? p.files.filter((f) => f.url?.startsWith('http'))
-          : [],
+        files: Array.isArray(p.files) ? p.files.filter((f) => f.url?.startsWith('http')) : [],
       }));
-
       setPapers(sanitized);
     } catch (err) {
       console.error('❌ Vote error:', err);
@@ -70,9 +65,7 @@ export default function Browse() {
       {/* Filters */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block mb-1 font-medium text-gray-700 dark:text-gray-300">
-            Subject
-          </label>
+          <label className="block mb-1 font-medium text-gray-700 dark:text-gray-300">Subject</label>
           <select
             className="w-full border border-purple-300 dark:border-gray-700 rounded-md px-3 py-1.5 text-sm bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
             value={selectedSubject}
@@ -88,9 +81,7 @@ export default function Browse() {
         </div>
 
         <div>
-          <label className="block mb-1 font-medium text-gray-700 dark:text-gray-300">
-            Semester
-          </label>
+          <label className="block mb-1 font-medium text-gray-700 dark:text-gray-300">Semester</label>
           <select
             className="w-full border border-purple-300 dark:border-gray-700 rounded-md px-3 py-1.5 text-sm bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
             value={selectedSemester}
@@ -118,12 +109,8 @@ export default function Browse() {
             {paper.description && <p className="text-gray-600 mb-4">{paper.description}</p>}
 
             {paper.files.map((f, idx) => (
-              <div
-                key={idx}
-                className="mb-4 border rounded-lg overflow-hidden shadow-sm bg-gray-50 dark:bg-gray-800"
-              >
+              <div key={idx} className="mb-4 border rounded-lg overflow-hidden shadow-sm bg-gray-50 dark:bg-gray-800">
                 <div className="flex flex-col sm:flex-row justify-between items-center p-4 gap-4">
-                  {/* File actions */}
                   <div className="flex gap-3">
                     <button
                       className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition"
