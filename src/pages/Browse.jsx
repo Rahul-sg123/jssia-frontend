@@ -30,10 +30,12 @@ export default function Browse() {
         params: { subject: selectedSubject, semester: selectedSemester },
       })
       .then((res) => {
-        // Ensure papers and files are arrays
+        // Only keep files with Cloudinary URLs
         const sanitized = (res.data || []).map((p) => ({
           ...p,
-          files: Array.isArray(p.files) ? p.files : [],
+          files: Array.isArray(p.files)
+            ? p.files.filter((f) => f.url?.startsWith('http'))
+            : [],
         }));
         setPapers(sanitized);
       })
@@ -52,7 +54,9 @@ export default function Browse() {
 
       const sanitized = (res.data || []).map((p) => ({
         ...p,
-        files: Array.isArray(p.files) ? p.files : [],
+        files: Array.isArray(p.files)
+          ? p.files.filter((f) => f.url?.startsWith('http'))
+          : [],
       }));
 
       setPapers(sanitized);
@@ -60,9 +64,6 @@ export default function Browse() {
       console.error('❌ Vote error:', err);
     }
   };
-
-  // Get file URL safely (Cloudinary URLs are full)
-  const getFileUrl = (url) => url || '#';
 
   return (
     <div className="space-y-6 p-4">
@@ -126,12 +127,12 @@ export default function Browse() {
                   <div className="flex gap-3">
                     <button
                       className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition"
-                      onClick={() => setPreviewUrl(getFileUrl(f.url))}
+                      onClick={() => setPreviewUrl(f.url)}
                     >
                       📄 View
                     </button>
                     <a
-                      href={getFileUrl(f.url)}
+                      href={f.url}
                       download
                       className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
                     >

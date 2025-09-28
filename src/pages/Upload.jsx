@@ -28,7 +28,6 @@ export default function Upload() {
     }
   };
 
-  // Add new subject
   const handleAddSubject = async () => {
     if (!newSubject.trim()) return;
     try {
@@ -75,12 +74,16 @@ export default function Upload() {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      setMessage('✅ Paper submitted successfully!');
-      setSubject('');
-      setSemester('');
-      setDescription('');
-      setFiles([]);
-      e.target.reset(); // reset file input
+      if (res.data.success) {
+        setMessage('✅ Paper submitted successfully!');
+        setSubject('');
+        setSemester('');
+        setDescription('');
+        setFiles([]);
+        e.target.reset();
+      } else {
+        alert('❌ Upload failed: ' + res.data.message);
+      }
     } catch (err) {
       console.error('❌ Upload failed:', err);
       alert('❌ Upload failed. Please try again.');
@@ -102,7 +105,7 @@ export default function Upload() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Subject Dropdown */}
+        {/* Subject */}
         <div>
           <label className="block mb-1 font-medium dark:text-white">Subject</label>
           <select
@@ -140,7 +143,7 @@ export default function Upload() {
           )}
         </div>
 
-        {/* Semester Dropdown */}
+        {/* Semester */}
         <div>
           <label className="block mb-1 font-medium dark:text-white">Semester</label>
           <select
@@ -169,7 +172,7 @@ export default function Upload() {
           />
         </div>
 
-        {/* Multiple File Upload */}
+        {/* Files */}
         <div>
           <label className="block mb-1 font-medium dark:text-white">Upload Image(s) / PDF(s)</label>
           <input
