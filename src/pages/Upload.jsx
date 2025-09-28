@@ -12,6 +12,7 @@ export default function Upload() {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Fetch subjects on mount
   useEffect(() => {
     fetchSubjects();
   }, []);
@@ -19,9 +20,9 @@ export default function Upload() {
   const fetchSubjects = async () => {
     try {
       const res = await axios.get('https://jssia-backend.onrender.com/api/subjects');
-      setSubjects(res.data.subjects);
+      setSubjects(res.data.subjects || []);
     } catch (err) {
-      console.error('Error fetching subjects:', err);
+      console.error('❌ Error fetching subjects:', err);
     }
   };
 
@@ -34,7 +35,7 @@ export default function Upload() {
       setNewSubject('');
       setAddingNew(false);
     } catch (err) {
-      alert('Failed to add subject.');
+      alert('❌ Failed to add subject.');
     }
   };
 
@@ -52,7 +53,7 @@ export default function Upload() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!subject || !semester) {
-      return alert('Please fill subject and semester.');
+      return alert('⚠️ Please select subject and semester.');
     }
 
     const formData = new FormData();
@@ -75,8 +76,9 @@ export default function Upload() {
       setSemester('');
       setDescription('');
       setFiles([]);
-      e.target.reset();
+      e.target.reset(); // reset file input
     } catch (err) {
+      console.error('❌ Upload failed:', err);
       alert('❌ Upload failed. Please try again.');
     } finally {
       setLoading(false);
@@ -100,18 +102,17 @@ export default function Upload() {
         <div>
           <label className="block mb-1 font-medium dark:text-white">Subject</label>
           <select
-            value={subject || ''}
+            value={subject}
             onChange={handleSubjectChange}
             required
             className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-white"
           >
             <option value="">Select a subject</option>
-            {Array.isArray(subjects) &&
-              subjects.map((s) => (
-                <option key={s._id} value={s.name}>
-                  {s.name}
-                </option>
-              ))}
+            {subjects.map((s) => (
+              <option key={s._id} value={s.name}>
+                {s.name}
+              </option>
+            ))}
             <option value="__add_new__">➕ Add new subject</option>
           </select>
 
@@ -146,7 +147,7 @@ export default function Upload() {
           >
             <option value="">Select semester</option>
             {[1, 2, 3, 4, 5, 6, 7, 8].map((s) => (
-              <option key={s} value={s.toString()}>
+              <option key={s} value={s}>
                 Semester {s}
               </option>
             ))}
