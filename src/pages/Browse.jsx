@@ -8,7 +8,6 @@ export default function Browse() {
   const [selectedSemester, setSelectedSemester] = useState('');
   const [previewUrl, setPreviewUrl] = useState(null);
 
-  // Base URL of backend
   const API_BASE = 'https://jssia-backend.onrender.com';
 
   // Load subjects
@@ -19,7 +18,7 @@ export default function Browse() {
       .catch((err) => console.error('❌ Subjects load error:', err));
   }, []);
 
-  // Load papers based on selected filters
+  // Load papers whenever filters change
   useEffect(() => {
     if (!selectedSubject || !selectedSemester) {
       setPapers([]);
@@ -28,45 +27,49 @@ export default function Browse() {
 
     axios
       .get(`${API_BASE}/papers`, {
-        params: {
-          subject: selectedSubject, // keep exact name
-          semester: selectedSemester,
-        },
+        params: { subject: selectedSubject, semester: selectedSemester },
       })
-      .then((res) => setPapers(res.data || []))
+      .then((res) => {
+        // Ensure papers and files are arrays
+        const sanitized = (res.data || []).map((p) => ({
+          ...p,
+          files: Array.isArray(p.files) ? p.files : [],
+        }));
+        setPapers(sanitized);
+      })
       .catch((err) => console.error('❌ Papers load error:', err));
   }, [selectedSubject, selectedSemester]);
 
-  // Handle voting
+  // Voting function
   const vote = async (paperId, fileIndex, type) => {
     try {
       await axios.put(`${API_BASE}/papers/${paperId}/files/${fileIndex}/${type}`);
 
-      // Refresh list after vote
+      // Refresh papers after vote
       const res = await axios.get(`${API_BASE}/papers`, {
-        params: {
-          subject: selectedSubject,
-          semester: selectedSemester,
-        },
+        params: { subject: selectedSubject, semester: selectedSemester },
       });
-      setPapers(res.data || []);
+
+      const sanitized = (res.data || []).map((p) => ({
+        ...p,
+        files: Array.isArray(p.files) ? p.files : [],
+      }));
+
+      setPapers(sanitized);
     } catch (err) {
       console.error('❌ Vote error:', err);
     }
   };
 
-  // Build file URL safely
-  const getFileUrl = (url) => {
-    if (!url) return '#';
-    return url.startsWith('http') ? url : `${API_BASE}${url}`;
-  };
+  // Get file URL safely (Cloudinary URLs are full)
+  const getFileUrl = (url) => url || '#';
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4">
       {/* Filters */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label className="block mb-1 font-medium text-gray-700 dark:text-gray-300">
             Subject
           </label>
           <select
@@ -84,7 +87,7 @@ export default function Browse() {
         </div>
 
         <div>
-          <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label className="block mb-1 font-medium text-gray-700 dark:text-gray-300">
             Semester
           </label>
           <select
@@ -104,7 +107,7 @@ export default function Browse() {
 
       {/* Papers */}
       {papers.length === 0 ? (
-        <p className="text-gray-500">No papers found.</p>
+        <p className="text-gray-500 mt-4">No papers found for selected filters.</p>
       ) : (
         papers.map((paper) => (
           <div key={paper._id} className="border rounded-lg p-4 shadow bg-white dark:bg-gray-900">
@@ -113,67 +116,66 @@ export default function Browse() {
             </h2>
             {paper.description && <p className="text-gray-600 mb-4">{paper.description}</p>}
 
-            {Array.isArray(paper.files) &&
-              paper.files.map((f, idx) => (
-                <div
-                  key={idx}
-                  className="mb-4 border rounded-lg overflow-hidden shadow-sm bg-gray-50 dark:bg-gray-800"
-                >
-                  <div className="flex flex-col sm:flex-row justify-between items-center p-4 gap-4">
-                    {/* File actions */}
-                    <div className="flex gap-3">
-                      <button
-                        className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition"
-                        onClick={() => setPreviewUrl(getFileUrl(f.url))}
-                      >
-                        📄 View
-                      </button>
-                      <a
-                        href={getFileUrl(f.url)}
-                        download
-                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
-                      >
-                        ⬇ Download
-                      </a>
-                    </div>
+            {paper.files.map((f, idx) => (
+              <div
+                key={idx}
+                className="mb-4 border rounded-lg overflow-hidden shadow-sm bg-gray-50 dark:bg-gray-800"
+              >
+                <div className="flex flex-col sm:flex-row justify-between items-center p-4 gap-4">
+                  {/* File actions */}
+                  <div className="flex gap-3">
+                    <button
+                      className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition"
+                      onClick={() => setPreviewUrl(getFileUrl(f.url))}
+                    >
+                      📄 View
+                    </button>
+                    <a
+                      href={getFileUrl(f.url)}
+                      download
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+                    >
+                      ⬇ Download
+                    </a>
+                  </div>
 
-                    {/* Voting */}
-                    <div className="flex gap-2 text-sm mt-2 sm:mt-0">
-                      <button
-                        onClick={() => {
-                          const key = `${paper._id}-${idx}-upvoted`;
-                          if (localStorage.getItem(key)) {
-                            alert("You've already liked this file.");
-                            return;
-                          }
-                          vote(paper._id, idx, 'upvote');
+                  {/* Voting */}
+                  <div className="flex gap-2 text-sm mt-2 sm:mt-0">
+                    <button
+                      onClick={() => {
+                        const key = `${paper._id}-${idx}-upvoted`;
+                        if (localStorage.getItem(key)) {
+                          alert("You've already liked this file.");
+                          return;
+                        }
+                        vote(paper._id, idx, 'upvote');
+                        localStorage.setItem(key, 'true');
+                      }}
+                      className="flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 transition"
+                    >
+                      👍 {f.upvotes}
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        const key = `${paper._id}-${idx}-downvoted`;
+                        if (localStorage.getItem(key)) {
+                          alert("You've already disliked this file.");
+                          return;
+                        }
+                        if (window.confirm('Are you sure you want to dislike this file?')) {
+                          vote(paper._id, idx, 'downvote');
                           localStorage.setItem(key, 'true');
-                        }}
-                        className="flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 transition"
-                      >
-                        👍 {f.upvotes}
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          const key = `${paper._id}-${idx}-downvoted`;
-                          if (localStorage.getItem(key)) {
-                            alert("You've already disliked this file.");
-                            return;
-                          }
-                          if (window.confirm('Are you sure you want to dislike this file?')) {
-                            vote(paper._id, idx, 'downvote');
-                            localStorage.setItem(key, 'true');
-                          }
-                        }}
-                        className="flex items-center gap-1 px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition"
-                      >
-                        👎 {f.downvotes}
-                      </button>
-                    </div>
+                        }
+                      }}
+                      className="flex items-center gap-1 px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition"
+                    >
+                      👎 {f.downvotes}
+                    </button>
                   </div>
                 </div>
-              ))}
+              </div>
+            ))}
           </div>
         ))
       )}
@@ -188,7 +190,12 @@ export default function Browse() {
             >
               ✖ Close
             </button>
-            <iframe src={previewUrl} title="Preview" className="w-full h-full" />
+            <iframe
+              src={previewUrl}
+              title="Preview"
+              className="w-full h-full"
+              sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+            />
           </div>
         </div>
       )}

@@ -12,6 +12,8 @@ export default function Upload() {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const API_BASE = 'https://jssia-backend.onrender.com';
+
   // Fetch subjects on mount
   useEffect(() => {
     fetchSubjects();
@@ -19,22 +21,24 @@ export default function Upload() {
 
   const fetchSubjects = async () => {
     try {
-      const res = await axios.get('https://jssia-backend.onrender.com/api/subjects');
+      const res = await axios.get(`${API_BASE}/api/subjects`);
       setSubjects(res.data.subjects || []);
     } catch (err) {
       console.error('❌ Error fetching subjects:', err);
     }
   };
 
+  // Add new subject
   const handleAddSubject = async () => {
     if (!newSubject.trim()) return;
     try {
-      await axios.post('https://jssia-backend.onrender.com/api/subjects', { name: newSubject.trim() });
+      await axios.post(`${API_BASE}/api/subjects`, { name: newSubject.trim() });
       await fetchSubjects();
       setSubject(newSubject.trim());
       setNewSubject('');
       setAddingNew(false);
     } catch (err) {
+      console.error('❌ Failed to add subject:', err);
       alert('❌ Failed to add subject.');
     }
   };
@@ -52,8 +56,8 @@ export default function Upload() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!subject || !semester) {
-      return alert('⚠️ Please select subject and semester.');
+    if (!subject || !semester || files.length === 0) {
+      return alert('⚠️ Please select subject, semester, and upload at least one file.');
     }
 
     const formData = new FormData();
@@ -67,7 +71,7 @@ export default function Upload() {
 
     try {
       setLoading(true);
-      await axios.post('https://jssia-backend.onrender.com/upload', formData, {
+      const res = await axios.post(`${API_BASE}/upload`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
@@ -167,9 +171,7 @@ export default function Upload() {
 
         {/* Multiple File Upload */}
         <div>
-          <label className="block mb-1 font-medium dark:text-white">
-            Upload Image(s) / PDF(s)
-          </label>
+          <label className="block mb-1 font-medium dark:text-white">Upload Image(s) / PDF(s)</label>
           <input
             type="file"
             accept="image/*,.pdf"
